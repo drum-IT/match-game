@@ -1,27 +1,27 @@
-$(document).ready(function() {
+var MatchGame = {};
+var pairsFound = 0;
+var $controls = $('<div class="col-xs-12 win">YOU WIN!</div><div class="col-xs-12 controls">PLAY AGAIN</div>')
+
+function restart() {
 	var $game = $('#game');
+	pairsFound = 0;
 	var values = MatchGame.generateCardValues();
 	MatchGame.renderCards(values, $game);
+}
+
+$(document).ready(function() {
+	restart();
 });
-
-var MatchGame = {};
-
-/*
-  Sets up a new game after HTML document has loaded.
-  Renders a 4x4 board of cards.
-*/
-
-/*
-  Generates and returns an array of matching card values.
- */
 
 MatchGame.generateCardValues = function() {
 	var numbers = [];
 	var pairs = [];
+
 	for (var i = 1; i < 9; i++) {
 		numbers.push(i);
 		numbers.push(i);
 	}
+
 	while (pairs.length < 16) {
 		var min = 0;
 		var max = numbers.length;
@@ -29,13 +29,9 @@ MatchGame.generateCardValues = function() {
 		pairs.push(numbers[random]);
 		numbers.splice(random, 1);
 	}
+
 	return pairs;
 };
-
-/*
-  Converts card values to jQuery card objects and adds them to the supplied game
-  object.
-*/
 
 MatchGame.renderCards = function(cardValues, $game) {
 	var colors = [
@@ -63,7 +59,6 @@ MatchGame.renderCards = function(cardValues, $game) {
 
 		var $cardElement = $('<div class="col-xs-3 card"></div>');
 		$cardElement.data(data);
-
 		$game.append($cardElement);
 	}
 
@@ -72,11 +67,45 @@ MatchGame.renderCards = function(cardValues, $game) {
 	});
 };
 
-/*
-  Flips over a given card and checks to see if two cards are flipped over.
-  Updates styles on flipped cards depending whether they are a match or not.
- */
-
 MatchGame.flipCard = function($card, $game) {
+	if ($card.data('isFlipped')) {
+		return;
+	}
 
+	$card.css('background-color', $card.data('color'))
+		.text($card.data('value'))
+		.data('isFlipped', true);
+	var flippedCards = $game.data('flippedCards');
+	flippedCards.push($card);
+
+	if (flippedCards.length === 2) {
+		if (flippedCards[0].data('value') === flippedCards[1].data('value')) {
+			var matchCss = {
+				backgroundColor: 'rgb(153, 153, 153)',
+				color: 'rgb(204,204,204)'
+			};
+			flippedCards[0].css(matchCss);
+			flippedCards[1].css(matchCss);
+			pairsFound += 1;
+			if (pairsFound === 8) {
+				$game.html($controls);
+			}
+		} else {
+			var card1 = flippedCards[0];
+			var card2 = flippedCards[1];
+			window.setTimeout(function() {
+				card1.css('background-color', 'rgb(32, 64, 86)')
+					.text('')
+					.data('isFlipped', false);
+				card2.css('background-color', 'rgb(32, 64, 86)')
+					.text('')
+					.data('isFlipped', false)
+			}, 350);
+		}
+		$game.data('flippedCards', []);
+	}
 };
+
+$controls.click(function() {
+	restart();
+});
